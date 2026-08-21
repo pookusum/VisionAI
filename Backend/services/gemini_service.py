@@ -1,4 +1,5 @@
 import os
+import json
 from dotenv import load_dotenv
 from google import genai
 
@@ -13,25 +14,44 @@ client = genai.Client(api_key=API_KEY)
 
 
 def analyze_image(image_bytes: bytes, mime_type: str):
+
     prompt = """
     Analyze this image carefully.
 
-    Provide:
+    Return ONLY valid JSON.
 
-    1. A concise and meaningful caption.
-    2. A detailed description of the image.
-    3. The main objects visible in the image.
-    4. The overall scene or environment.
-    5. Any visible activities or actions.
+    Use exactly this structure:
 
-    Do not invent objects or details that are not reasonably
-    visible in the image.
+    {
+        "caption": "A concise and meaningful caption",
+        "description": "A detailed description of the image",
+        "scene": "The overall environment or scene",
+        "objects": [
+            {
+                "name": "object name",
+                "description": "brief description of the object"
+            }
+        ],
+        "activities": [
+            "visible activity or action"
+        ]
+    }
 
-    Return the result in a clear and structured format.
+    Requirements:
+
+    - The caption should be concise.
+    - The description should explain the image in detail.
+    - List the important visible objects.
+    - Explain the overall scene/environment.
+    - List visible activities or actions.
+    - Do not invent objects or activities that are not reasonably
+      visible in the image.
+    - If no activity is visible, return an empty array.
+    - Return valid JSON only.
     """
 
     response = client.models.generate_content(
-        model="gemini-2.5-flash",
+        model="gemini-3.6-flash",
         contents=[
             {
                 "inline_data": {
@@ -43,4 +63,18 @@ def analyze_image(image_bytes: bytes, mime_type: str):
         ],
     )
 
-    return response.text
+    text = response.text.strip()
+
+    # Remove markdown code fences if Gemini adds them
+    if text.startswith("```json"):
+        text = text[7:]
+
+    if text.startswith("```"):
+        text = text[3:]
+
+    if text.endswith("```"):
+        text = text[:-3]
+
+    text = text.strip()
+
+    return json.loads(text)
