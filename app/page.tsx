@@ -54,6 +54,7 @@ export default function Home() {
       "image/png",
       "image/webp",
     ];
+    
 
     if (!allowedTypes.includes(file.type)) {
       setError("Please select a JPG, PNG, or WEBP image.");
