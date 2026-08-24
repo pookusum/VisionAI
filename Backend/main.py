@@ -1,31 +1,23 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
-from routes.image import router as image_router
+from services.gemini_service import analyze_image
 
 
 app = FastAPI(
     title="VisionAI",
-    description="AI-powered image captioning and visual understanding API",
-    version="1.0.0"
+    version="1.0.0",
+    description="AI-powered image captioning and visual understanding API"
 )
 
 
-# Allow requests from our Next.js frontend
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-    "http://localhost:3000",
-    "http://127.0.0.1:3000"
-],
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-
-# Register routes
-app.include_router(image_router)
 
 
 @app.get("/")
@@ -35,8 +27,52 @@ def root():
     }
 
 
-@app.get("/health")
-def health_check():
-    return {
-        "status": "healthy"
-    }
+@app.post("/api/analyze-image")
+async def analyze_uploaded_image(
+    image: UploadFile = File(...)
+):
+
+    try:
+
+        # Read uploaded image
+        image_bytes = await image.read()
+
+        # Get MIME type
+        mime_type = image.content_type
+
+        # Validate MIME type
+        allowed_types = [
+            "image/jpeg",
+            "image/png",
+            "image/webp"
+        ]
+
+        if mime_type not in allowed_types:
+            raise HTTPException(
+                status_code=400,
+                detail="Only JPG, PNG and WEBP images are supported."
+            )
+
+        # Send image to Gemini
+        analysis = analyze_image(
+            image_bytes=image_bytes,
+            mime_type=mime_type
+        )
+
+        return {
+            "success": True,
+            "filename": image.filename,
+            "analysis": analysis
+        }
+
+    except HTTPException:
+        raise
+
+    except Exception as e:
+
+        print("API ERROR:", repr(e))
+
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to analyze image: {str(e)}"
+        )
