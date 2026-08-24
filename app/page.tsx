@@ -101,23 +101,29 @@ export default function Home() {
       formData.append("image", selectedFile);
 
       const response = await fetch(
-        "http://127.0.0.1:8000/api/analyze-image",
-        {
-          method: "POST",
-          body: formData,
-        }
-      );
+        `${process.env.NEXT_PUBLIC_API_URL}/api/analyze-image`,
+          {
+            method: "POST",
+            body: formData,
+  }
+);
 
       // Show actual backend error
       if (!response.ok) {
-        const errorText = await response.text();
+        let message = "Unable to analyze the image.";
 
-        console.error("Backend error:", errorText);
+        try {
+        const errorData = await response.json();
 
-        throw new Error(
-          `Server error ${response.status}: ${errorText}`
-        );
-      }
+        if (errorData.detail) {
+          message = errorData.detail;
+    }
+    } catch {
+    
+    }
+
+    throw new Error(message);
+}
 
       const data: AnalysisResponse = await response.json();
 
