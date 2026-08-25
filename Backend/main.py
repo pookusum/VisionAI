@@ -10,9 +10,6 @@ app = FastAPI(
     description="AI-powered image captioning and visual understanding API"
 )
 
-
-from fastapi.middleware.cors import CORSMiddleware
-
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
@@ -25,19 +22,16 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
 @app.get("/")
 def root():
     return {
         "message": "VisionAI API is running"
     }
 
-
 @app.post("/api/analyze-image")
 async def analyze_uploaded_image(
     image: UploadFile = File(...)
 ):
-
     try:
         image_bytes = await image.read()
 
@@ -70,7 +64,6 @@ async def analyze_uploaded_image(
         raise
 
     except Exception as e:
-
         print("API ERROR:", repr(e))
 
         raise HTTPException(
