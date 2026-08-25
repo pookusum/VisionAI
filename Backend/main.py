@@ -11,9 +11,15 @@ app = FastAPI(
 )
 
 
+from fastapi.middleware.cors import CORSMiddleware
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        "https://visionai-2.onrender.com",
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -33,14 +39,10 @@ async def analyze_uploaded_image(
 ):
 
     try:
-
-        # Read uploaded image
         image_bytes = await image.read()
 
-        # Get MIME type
         mime_type = image.content_type
 
-        # Validate MIME type
         allowed_types = [
             "image/jpeg",
             "image/png",
@@ -53,7 +55,6 @@ async def analyze_uploaded_image(
                 detail="Only JPG, PNG and WEBP images are supported."
             )
 
-        # Send image to Gemini
         analysis = analyze_image(
             image_bytes=image_bytes,
             mime_type=mime_type
